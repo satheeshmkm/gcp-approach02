@@ -34,7 +34,7 @@ public class ActiveMQMessageReceiver {
 
 	@Value("${com.sck.upload.backup.dir:backup}")
 	private String backupFolder;
-	
+
 	@Value("${sck.gcp.bigquery.transfer.name}")
 	private String bqTransferName;
 
@@ -52,9 +52,13 @@ public class ActiveMQMessageReceiver {
 			LOGGER.info("convertToJSONL() completed");
 
 			byte[] arr = jsonl.getBytes();
-			String backupFile = cloudStorageService.getFilePath(backupFolder, "product");
-			cloudStorageService.uploadToCloudStorage(backupFile, arr);
-			LOGGER.info("File uploaded to bucket with name " + backupFile);
+			String uploadFilePath = cloudStorageService.getFilePath(backupFolder, "product");
+			cloudStorageService.uploadToCloudStorage(uploadFilePath, arr);
+			LOGGER.info("File uploaded to bucket with name " + uploadFilePath);
+
+			String backupFilePath = cloudStorageService.getFilePath(backupFolder, "product");
+			cloudStorageService.copyToOtherBucket(uploadFilePath, backupFilePath);
+			LOGGER.info("File copied from " + uploadFilePath + " to " + backupFilePath);
 
 			List<String> runs = bigDataService.runTransfer(bqTransferName);
 			LOGGER.info("Job started " + runs);
